@@ -1,0 +1,28 @@
+# Render Blueprint — background worker (no HTTP port; the bot connects
+# outbound to Telegram/Discord, it doesn't serve requests).
+#
+# Free-tier caveat: Render's free background workers spin down after
+# inactivity the same way free web services do. Persisted links
+# (LINK_STORE_PATH) live on ephemeral disk on the free tier and are lost on
+# redeploy — fine for a testnet demo, not for production. Attach a Render
+# Disk (paid) or point LINK_STORE_PATH at a mounted volume for real use.
+
+services:
+  - type: worker
+    name: stellarcade-bot
+    runtime: docker
+    plan: free
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: "production"
+      - key: GATEWAY_URL
+        value: "https://gateway.theblockcade.xyz"
+      - key: ARBITER_URL
+        value: "https://arbiter.theblockcade.xyz"
+      - key: WEB_APP_URL
+        value: "https://theblockcade.xyz"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false

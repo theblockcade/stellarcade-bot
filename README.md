@@ -15,6 +15,11 @@ signature — see [`src/core/session-link.ts`](src/core/session-link.ts).
 Anything that needs a real signature (placing a bet, claiming a prize) is a
 deep link into the web app, never handled in chat.
 
+## 🌐 Live Deployment
+- **Live Web Service**: `https://stellarcade-bot.onrender.com`
+- **Telegram Bot**: Active via `@StellarcadeOfficialBot`
+- **Connected Services**: Express API (`https://stellarcade-backend.onrender.com/api`), Arbiter (`https://stellarcade-arbiter.onrender.com`)
+
 ## Commands
 
 | Command | Description |

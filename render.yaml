@@ -1,20 +1,23 @@
-# Render Blueprint — background worker (no HTTP port; the bot connects
-# outbound to Telegram/Discord, it doesn't serve requests).
+# Render Blueprint — web service (free tier compatible).
 #
-# DATABASE_URL below is required for durable wallet links: when it's set,
+# Background workers require a paid Render plan. We run the bot as a
+# "web" service instead: a minimal health-check HTTP server binds to
+# $PORT so Render is satisfied, while the bot itself runs via
+# long-polling in the same process.
+#
+# DATABASE_URL is required for durable wallet links: when set,
 # bot.ts uses PostgresLinkStore (writes to the arbiter's bot_links table)
-# instead of JsonFileLinkStore, which otherwise lives on this service's
-# ephemeral disk and is wiped on every redeploy. Point it at the same
-# Postgres instance as stellarcade-arbiter-db (see that repo's render.yaml)
-# rather than a separate database — bot_links is created by the arbiter's
-# migration, not the bot's.
+# instead of JsonFileLinkStore, which lives on ephemeral disk and is
+# wiped on every redeploy. Point it at the same Postgres instance as
+# stellarcade-arbiter-db — bot_links is created by the arbiter's migration.
 
 services:
-  - type: worker
+  - type: web
     name: stellarcade-bot
     runtime: docker
     plan: free
     autoDeploy: false
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: "production"

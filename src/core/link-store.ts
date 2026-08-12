@@ -1,5 +1,6 @@
 import { readFile, writeFile, rename } from "node:fs/promises";
 import type { Platform } from "./types.js";
+import pg from "pg";
 
 export interface LinkStore {
   getAddress(platform: Platform, userId: string): Promise<string | null>;
@@ -65,5 +66,51 @@ export class JsonFileLinkStore implements LinkStore {
     const map = await this.load();
     map.set(key(platform, userId), address);
     await this.persist();
+  }
+}
+
+/**
+ * PostgreSQL-backed durable link store for bot deployments.
+ */
+export class PostgresLinkStore implements LinkStore {
+  private pool: pg.Pool;
+
+  constructor(connectionString: string) {
+    this.pool = new pg.Pool({
+      connectionString,
+    });
+  }
+
+  async getAddress(platform: Platform, userId: string): Promise<string | null> {
+    try {
+      const res = await this.pool.query(
+        "SELECT wallet_address FROM bot_links WHERE platform = $1 AND user_id = $2",
+        [platform, userId]
+      );
+      if (res.rows.length === 0) return null;
+      return res.rows[0].wallet_address;
+    } catch (err) {
+      console.error("Error in PostgresLinkStore.getAddress:", err);
+      throw err;
+    }
+  }
+
+  async setAddress(platform: Platform, userId: string, address: string): Promise<void> {
+    try {
+      await this.pool.query(
+        `INSERT INTO bot_links (platform, user_id, wallet_address, created_at)
+         VALUES ($1, $2, $3, now())
+         ON CONFLICT (platform, user_id)
+         DO UPDATE SET wallet_address = EXCLUDED.wallet_address, created_at = now()`,
+        [platform, userId, address]
+      );
+    } catch (err) {
+      console.error("Error in PostgresLinkStore.setAddress:", err);
+      throw err;
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.pool.end();
   }
 }

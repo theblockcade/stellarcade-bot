@@ -4,7 +4,7 @@ import { createDiscordBot } from "./adapters/discord.js";
 import { createTelegramBot } from "./adapters/telegram.js";
 import { ArcadeApiClient } from "./core/api-client.js";
 import { CommandRouter } from "./core/command-router.js";
-import { JsonFileLinkStore } from "./core/link-store.js";
+import { type LinkStore, JsonFileLinkStore, PostgresLinkStore } from "./core/link-store.js";
 import { SessionLinker } from "./core/session-link.js";
 import { createCommands } from "./commands/index.js";
 import type { BotConfig } from "./config.js";
@@ -17,7 +17,12 @@ export interface RunningBot {
 
 export async function startBot(config: BotConfig): Promise<RunningBot> {
   const api = new ArcadeApiClient(config.gatewayUrl, config.arbiterUrl);
-  const links = new JsonFileLinkStore(config.linkStorePath);
+  
+  const dbUrl = process.env.DATABASE_URL;
+  const links: LinkStore = dbUrl
+    ? new PostgresLinkStore(dbUrl)
+    : new JsonFileLinkStore(config.linkStorePath);
+    
   const sessionLinker = new SessionLinker();
 
   const router = new CommandRouter();

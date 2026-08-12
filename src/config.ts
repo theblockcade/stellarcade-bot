@@ -37,9 +37,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
   const discordBotToken = env.DISCORD_BOT_TOKEN;
 
   if (!telegramBotToken && !discordBotToken) {
-    throw new ConfigError(
-      "At least one of TELEGRAM_BOT_TOKEN or DISCORD_BOT_TOKEN must be set — " +
-        "a bot with neither adapter configured has nothing to do.",
+    // Log a warning instead of crashing — the health-check server will keep
+    // the Render service alive so env vars can be fixed without a crash loop.
+    console.warn(
+      "[stellarcade-bot] WARNING: Neither TELEGRAM_BOT_TOKEN nor DISCORD_BOT_TOKEN is set. " +
+        "The bot will start but no adapters will be active. Add at least one token and redeploy.",
     );
   }
 

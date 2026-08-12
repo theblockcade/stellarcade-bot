@@ -23,6 +23,22 @@ function truncate(address: string): string {
 }
 
 export function createCommands(deps: CommandDeps): CommandHandler[] {
+  const start: CommandHandler = {
+    name: "start",
+    description: "Welcome message and quick-start guide",
+    async handle(ctx) {
+      await ctx.reply(
+        `👋 Welcome to TheBlockCade bot!\n\n` +
+          `🎮 Play on-chain arcade games, track your stats, and verify fair play — all from Telegram.\n\n` +
+          `Getting started:\n` +
+          `1️⃣ /link — Connect your Stellar wallet\n` +
+          `2️⃣ /play — Jump into a game\n` +
+          `3️⃣ /leaderboard — See the top players\n\n` +
+          `Type /help to see all available commands.`,
+      );
+    },
+  };
+
   const help: CommandHandler = {
     name: "help",
     description: "List available commands",
@@ -147,6 +163,6 @@ export function createCommands(deps: CommandDeps): CommandHandler[] {
     },
   };
 
-  const commands = [help, link, balance, leaderboard, quest, tournament, verify, play];
+  const commands = [start, help, link, balance, leaderboard, quest, tournament, verify, play];
   return commands;
 }

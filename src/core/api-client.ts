@@ -8,8 +8,14 @@ export class ApiError extends Error {
   }
 }
 
+function buildUrl(baseUrl: string, path: string): string {
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const relativePath = path.startsWith("/") ? path.slice(1) : path;
+  return new URL(relativePath, base).toString();
+}
+
 async function getJson<T>(baseUrl: string, path: string): Promise<T> {
-  const url = new URL(path, baseUrl).toString();
+  const url = buildUrl(baseUrl, path);
   const res = await fetch(url);
   if (!res.ok) {
     throw new ApiError(`GET ${url} -> ${res.status}`, res.status);
@@ -18,7 +24,7 @@ async function getJson<T>(baseUrl: string, path: string): Promise<T> {
 }
 
 async function postJson<T>(baseUrl: string, path: string, body: unknown): Promise<T> {
-  const url = new URL(path, baseUrl).toString();
+  const url = buildUrl(baseUrl, path);
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },

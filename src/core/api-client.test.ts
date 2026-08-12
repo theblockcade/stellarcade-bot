@@ -8,14 +8,15 @@ describe("ArcadeApiClient", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("fetches the leaderboard with game and limit params", async () => {
+  it("fetches the leaderboard with game and limit params and preserves baseUrl path prefix", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify([]), { status: 200 })) as unknown as typeof fetch;
-    const client = new ArcadeApiClient("https://gateway.example.com", "https://arbiter.example.com");
+    const client = new ArcadeApiClient("https://gateway.example.com/api", "https://arbiter.example.com");
 
     await client.getLeaderboard("dice-roll", 5);
 
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const url = String(call?.[0]);
+    expect(url).toContain("https://gateway.example.com/api/leaderboard");
     expect(url).toContain("game=dice-roll");
     expect(url).toContain("limit=5");
   });

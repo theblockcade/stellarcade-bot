@@ -1,11 +1,13 @@
 # Render Blueprint — background worker (no HTTP port; the bot connects
 # outbound to Telegram/Discord, it doesn't serve requests).
 #
-# Free-tier caveat: Render's free background workers spin down after
-# inactivity the same way free web services do. Persisted links
-# (LINK_STORE_PATH) live on ephemeral disk on the free tier and are lost on
-# redeploy — fine for a testnet demo, not for production. Attach a Render
-# Disk (paid) or point LINK_STORE_PATH at a mounted volume for real use.
+# DATABASE_URL below is required for durable wallet links: when it's set,
+# bot.ts uses PostgresLinkStore (writes to the arbiter's bot_links table)
+# instead of JsonFileLinkStore, which otherwise lives on this service's
+# ephemeral disk and is wiped on every redeploy. Point it at the same
+# Postgres instance as stellarcade-arbiter-db (see that repo's render.yaml)
+# rather than a separate database — bot_links is created by the arbiter's
+# migration, not the bot's.
 
 services:
   - type: worker
@@ -17,7 +19,9 @@ services:
       - key: NODE_ENV
         value: "production"
       - key: GATEWAY_URL
-        value: "https://gateway.theblockcade.xyz"
+        # Must include the backend's /api mount prefix — ArcadeApiClient
+        # appends paths like /leaderboard directly to this base.
+        value: "https://gateway.theblockcade.xyz/api"
       - key: ARBITER_URL
         value: "https://arbiter.theblockcade.xyz"
       - key: WEB_APP_URL
@@ -25,4 +29,6 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
         sync: false

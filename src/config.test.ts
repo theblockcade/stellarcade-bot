@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ConfigError, loadConfig } from "./config.js";
 
 function baseEnv(overrides: Partial<NodeJS.ProcessEnv> = {}): NodeJS.ProcessEnv {
@@ -25,10 +25,18 @@ describe("loadConfig", () => {
     expect(config.discordBotToken).toBe("dc-token");
   });
 
-  it("throws when neither bot token is set", () => {
+  it("warns but does not throw when neither bot token is set", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const env = baseEnv();
     delete env.TELEGRAM_BOT_TOKEN;
-    expect(() => loadConfig(env)).toThrow(/At least one of/);
+
+    const config = loadConfig(env);
+
+    expect(config.telegramBotToken).toBeUndefined();
+    expect(config.discordBotToken).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/Neither TELEGRAM_BOT_TOKEN nor DISCORD_BOT_TOKEN/));
+
+    warnSpy.mockRestore();
   });
 
   it("throws when GATEWAY_URL is missing", () => {

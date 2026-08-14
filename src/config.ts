@@ -24,9 +24,10 @@ function requireEnv(env: NodeJS.ProcessEnv, key: string): string {
 }
 
 /**
- * At least one of TELEGRAM_BOT_TOKEN / DISCORD_BOT_TOKEN must be set — a
- * bot with neither adapter configured can't do anything, so that's a
- * startup failure rather than a silent no-op process.
+ * At least one of TELEGRAM_BOT_TOKEN / DISCORD_BOT_TOKEN should be set — a
+ * bot with neither adapter configured has nothing to do. This is degraded
+ * to a warning (not a thrown error) so the health-check server keeps the
+ * Render service alive while env vars are fixed, instead of crash-looping.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
   const gatewayUrl = requireEnv(env, "GATEWAY_URL");

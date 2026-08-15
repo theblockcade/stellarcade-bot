@@ -1,6 +1,16 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { Keypair } from "@stellar/stellar-sdk";
 import type { Platform } from "./types.js";
+
+/**
+ * Freighter's signMessage doesn't sign the raw message bytes — it signs
+ * sha256("Stellar Signed Message:\n" + message), the same wrapping
+ * convention as SEP-53 (and Ethereum's personal_sign). Verification must
+ * hash the challenge the same way or every real wallet signature fails.
+ */
+function stellarSignedMessageHash(message: string): Buffer {
+  return createHash("sha256").update(`Stellar Signed Message:\n${message}`, "utf8").digest();
+}
 
 export interface LinkChallenge {
   challenge: string;
@@ -78,7 +88,7 @@ export class SessionLinker {
 
     const keypair = Keypair.fromPublicKey(address);
     const signature = Buffer.from(signatureBase64, "base64");
-    const valid = keypair.verify(Buffer.from(record.challenge, "utf8"), signature);
+    const valid = keypair.verify(stellarSignedMessageHash(record.challenge), signature);
 
     if (!valid) {
       throw new InvalidSignatureError();

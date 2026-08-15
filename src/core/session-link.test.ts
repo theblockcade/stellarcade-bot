@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Keypair } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 import {
@@ -6,6 +7,13 @@ import {
   InvalidSignatureError,
   SessionLinker,
 } from "./session-link.js";
+
+// Mirrors how Freighter (and SEP-53-style wallets) actually sign messages:
+// over sha256("Stellar Signed Message:\n" + message), not the raw bytes.
+function signChallenge(keypair: Keypair, challenge: string): string {
+  const hash = createHash("sha256").update(`Stellar Signed Message:\n${challenge}`, "utf8").digest();
+  return keypair.sign(hash).toString("base64");
+}
 
 describe("SessionLinker", () => {
   it("creates a fresh challenge per user", () => {
@@ -20,7 +28,7 @@ describe("SessionLinker", () => {
     const keypair = Keypair.random();
 
     const { challenge } = linker.createChallenge("telegram", "user1");
-    const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
+    const signature = signChallenge(keypair, challenge);
 
     const address = linker.confirm("telegram", "user1", keypair.publicKey(), signature);
     expect(address).toBe(keypair.publicKey());
@@ -32,7 +40,7 @@ describe("SessionLinker", () => {
     const claimedAddress = Keypair.random(); // different keypair's public key
 
     const { challenge } = linker.createChallenge("telegram", "user1");
-    const signature = signer.sign(Buffer.from(challenge, "utf8")).toString("base64");
+    const signature = signChallenge(signer, challenge);
 
     expect(() => linker.confirm("telegram", "user1", claimedAddress.publicKey(), signature)).toThrow(
       InvalidSignatureError,
@@ -44,7 +52,7 @@ describe("SessionLinker", () => {
     const keypair = Keypair.random();
 
     linker.createChallenge("telegram", "user1");
-    const signature = keypair.sign(Buffer.from("not-the-challenge", "utf8")).toString("base64");
+    const signature = signChallenge(keypair, "not-the-challenge");
 
     expect(() => linker.confirm("telegram", "user1", keypair.publicKey(), signature)).toThrow(InvalidSignatureError);
   });
@@ -61,7 +69,7 @@ describe("SessionLinker", () => {
     const keypair = Keypair.random();
 
     const { challenge } = linker.createChallenge("telegram", "user1", now);
-    const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
+    const signature = signChallenge(keypair, challenge);
 
     now += 5000;
     expect(() => linker.confirm("telegram", "user1", keypair.publicKey(), signature, now)).toThrow(
@@ -74,7 +82,7 @@ describe("SessionLinker", () => {
     const keypair = Keypair.random();
 
     const { challenge } = linker.createChallenge("telegram", "user1");
-    const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
+    const signature = signChallenge(keypair, challenge);
 
     linker.confirm("telegram", "user1", keypair.publicKey(), signature);
     expect(() => linker.confirm("telegram", "user1", keypair.publicKey(), signature)).toThrow(
@@ -89,7 +97,7 @@ describe("SessionLinker", () => {
     const tg = linker.createChallenge("telegram", "same-id");
     linker.createChallenge("discord", "same-id");
 
-    const tgSignature = keypair.sign(Buffer.from(tg.challenge, "utf8")).toString("base64");
+    const tgSignature = signChallenge(keypair, tg.challenge);
     // Signing the telegram challenge should not confirm the discord session.
     expect(() => linker.confirm("discord", "same-id", keypair.publicKey(), tgSignature)).toThrow(
       InvalidSignatureError,

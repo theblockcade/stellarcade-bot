@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Keypair } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 import type { ArcadeApiClient } from "../core/api-client.js";
@@ -5,6 +6,13 @@ import { InMemoryLinkStore } from "../core/link-store.js";
 import { SessionLinker } from "../core/session-link.js";
 import type { CommandContext } from "../core/types.js";
 import { createCommands } from "./index.js";
+
+// Mirrors how Freighter (and SEP-53-style wallets) actually sign messages:
+// over sha256("Stellar Signed Message:\n" + message), not the raw bytes.
+function signChallenge(keypair: Keypair, challenge: string): string {
+  const hash = createHash("sha256").update(`Stellar Signed Message:\n${challenge}`, "utf8").digest();
+  return keypair.sign(hash).toString("base64");
+}
 
 function apiStub(): ArcadeApiClient {
   return {
@@ -80,7 +88,7 @@ describe("link command", () => {
     const keypair = Keypair.random();
 
     const { challenge } = sessionLinker.createChallenge("telegram", "u1");
-    const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
+    const signature = signChallenge(keypair, challenge);
 
     const { ctx, replies } = ctxFor({}, [keypair.publicKey(), signature]);
     await findCommand(commands, "link").handle(ctx);

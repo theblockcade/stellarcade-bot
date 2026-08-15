@@ -24,11 +24,11 @@ services:
       - key: GATEWAY_URL
         # Must include the backend's /api mount prefix — ArcadeApiClient
         # appends paths like /leaderboard directly to this base.
-        value: "https://gateway.theblockcade.xyz/api"
+        value: "https://gateway.stellarcade.xyz/api"
       - key: ARBITER_URL
-        value: "https://arbiter.theblockcade.xyz"
+        value: "https://arbiter.stellarcade.xyz"
       - key: WEB_APP_URL
-        value: "https://theblockcade.xyz"
+        value: "https://stellarcade.xyz"
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: DISCORD_BOT_TOKEN

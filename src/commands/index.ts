@@ -156,7 +156,7 @@ export function createCommands(deps: CommandDeps): CommandHandler[] {
     description: "Get a link to play a game: /play <game>",
     async handle(ctx) {
       const gameId = ctx.args[0];
-      const path = gameId ? `/app/games/${gameId}` : "/arcade";
+      const path = gameId ? `/games?game=${encodeURIComponent(gameId)}` : "/app";
       await ctx.reply(
         `Play here — the bot never holds your keys, all signing happens in the web app:\n${deps.webAppUrl}${path}`,
       );

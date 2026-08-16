@@ -191,6 +191,6 @@ describe("play command", () => {
     const { ctx, replies } = ctxFor({}, ["coin-flip"]);
 
     await findCommand(commands, "play").handle(ctx);
-    expect(replies[0]).toContain("https://theblockcade.xyz/app/games/coin-flip");
+    expect(replies[0]).toContain("https://theblockcade.xyz/games?game=coin-flip");
   });
 });
